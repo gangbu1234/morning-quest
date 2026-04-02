@@ -1,0 +1,22 @@
+{
+  "name": "まほうのあさクエスト",
+  "short_name": "あさクエスト",
+  "description": "まいあさのじゅんびをたのしくクリア！まほうのクエストがはじまるよ！",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFE4F3",
+  "theme_color": "#FFD6E7",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/char-default.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/char-default.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
