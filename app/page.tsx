@@ -221,53 +221,18 @@ function CharacterAnimation({ state, size = 200 }: CharacterAnimationProps) {
     }
   }, [state])
 
-  // Framer Motionでの3〜4頭身用 Squash & Stretch および複雑な動き
-  const motionAnim = state === 'clear'
-    ? { 
-        y: [0, 10, -60, 0, 10, 0], // 溜め(+10)→上昇(-60)→着地(0)→反動(+10)
-        scaleX: [1, 1.1, 0.9, 1, 1.1, 1], // 溜めで横に伸び、空中で縦長に、着地で少し横に伸びる
-        scaleY: [1, 0.9, 1.1, 1, 0.9, 1]  // 溜めで縦に潰れ、空中で伸び、着地で少し潰れる
-      }
-    : state === 'panic'
-    ? { x: [-50, 50, -50], y: [0, -5, 0] }   // 画面内左右往復と浮遊感
-    : state === 'waiting'
-    ? { 
-        y: [0, -4, 0],
-        scaleX: [1, 1.03, 1], // 呼吸にあわせて横に「ぷにゅ」と膨らむ
-        scaleY: [1, 0.97, 1]  // 呼吸にあわせて縦に少し潰れる
-      }
-    : { 
-        rotate: [-8, 8, -8], // 応援時、大きな頭をリズムよく左右に傾ける
-        y: [0, -8, 0],
-        scaleX: [1, 1.02, 1],
-        scaleY: [1, 0.98, 1]
-      }
-
-  const motionTransition: any = state === 'clear'
-    ? { duration: 1.2, times: [0, 0.2, 0.6, 0.8, 0.9, 1], repeat: Infinity, repeatDelay: 0.5, ease: 'easeOut' } // ジャンプ軌道
-    : state === 'panic'
-    ? { duration: 0.8, repeat: Infinity, ease: 'linear' } // 往復はlinearで高速
-    : state === 'waiting'
-    ? { duration: 2.5, repeat: Infinity, ease: 'easeInOut' } // 呼吸にあわせてゆっくり
-    : { duration: 0.8, repeat: Infinity, ease: 'easeInOut' } // running用リズム
-
-  // キャラクター自体の震えエフェクト (panic時のみ高速で震える)
-  const shakeAnim = state === 'panic'
-    ? { rotate: [-5, 5, -5], scale: [0.96, 1.04, 0.96] }
-    : { rotate: 0, scale: 1 }
+  // アスペクト比を元画像(584x1024)の通りに保つ。高さ基準とする。
+  const charHeight = size * 1.2;
 
   return (
-    <motion.div
-      animate={motionAnim}
-      transition={motionTransition}
+    <div
       className="relative flex justify-center items-center drop-shadow-2xl"
-      style={{ width: size, height: size }}
+      style={{ height: charHeight, aspectRatio: '584 / 1024' }}
     >
-      <motion.div
-        animate={shakeAnim}
-        transition={{ duration: 0.12, repeat: Infinity }}
-        className={`sprite-char ${spriteClass} ${animClass} rounded-2xl overflow-hidden shadow-inner border-4 border-white/50`}
-        style={{ width: '100%', height: '100%', backgroundImage: DUMMY_SPRITE_URL_4X4, transformOrigin: 'bottom center' }}
+      {/* Framer Motionの不要な変形（揺れ・移動）を削除し、純粋なスプライトアニメーションのみを描画します */}
+      <div
+        className={`sprite-char ${spriteClass} ${animClass}`}
+        style={{ width: '100%', height: '100%', backgroundImage: DUMMY_SPRITE_URL_4X4, backgroundPositionX: 0 }}
       />
       
       {/* 待機中のZzzエフェクト */}
@@ -280,7 +245,7 @@ function CharacterAnimation({ state, size = 200 }: CharacterAnimationProps) {
           Zzz
         </motion.div>
       )}
-    </motion.div>
+    </div>
   )
 }
 
