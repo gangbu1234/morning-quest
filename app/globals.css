@@ -60,23 +60,36 @@ body {
 }
 
 /* ==============================
-   Sprite Animation (Character)
+   Sprite Animation (Character 4x4 Grid)
    ============================== */
 .sprite-char {
-  background-size: 200% 400%; /* 2x2 frames horizontal, 4 rows vertical */
+  background-size: 400% 400%; /* 4 columns x 4 rows */
   background-repeat: no-repeat;
-  image-rendering: pixelated; /* To keep edges sharp if it's pixel art */
+  image-rendering: auto; /* Since it's a styled character, auto is better than pixelated */
 }
 
-@keyframes sprite-2-frames {
-  to { background-position-x: 200%; }
+/* 4枚使いのアニメーション: 133.333% が (N / N-1) * 100% と等しく正しい位置 */
+@keyframes sprite-4-frames {
+  to { background-position-x: 133.3333%; }
 }
 
-.sprite-anim-2 {
-  animation: sprite-2-frames 1s steps(2, end) infinite;
+/* 3枚使いのアニメーション */
+@keyframes sprite-3-frames {
+  to { background-position-x: 100%; }
 }
-.sprite-anim-2-fast {
-  animation: sprite-2-frames 0.2s steps(2, end) infinite;
+
+/* 速度イージング変更 */
+.sprite-anim-wait {
+  animation: sprite-4-frames 1.5s steps(4, end) infinite;
+}
+.sprite-anim-run {
+  animation: sprite-4-frames 0.8s steps(4, end) infinite;
+}
+.sprite-anim-panic {
+  animation: sprite-4-frames 0.3s steps(4, end) infinite;
+}
+.sprite-anim-clear {
+  animation: sprite-3-frames 0.6s steps(3, end) infinite;
 }
 
 .sprite-row-1 { background-position-y: 0%; }

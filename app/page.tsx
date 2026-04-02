@@ -193,8 +193,8 @@ interface CharacterAnimationProps {
   size?: number
 }
 
-// ダミーのスプライト画像ではなく、生成したイラストを使用します
-const REAL_SPRITE_URL = `url("/char-sprite.png")`
+// 4状態 x 最大4枚のスプライト (1フレーム128x128、4列4行の 512x512)
+const DUMMY_SPRITE_URL_4X4 = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'%3E%3C!-- row 1 --%3E%3Crect x='0' y='0' width='128' height='128' fill='%23A7D8F0'/%3E%3Ctext x='64' y='64' font-family='sans-serif' font-size='32' font-weight='800' text-anchor='middle' dominant-baseline='middle'%3E寝1%3C/text%3E%3Crect x='128' y='0' width='128' height='128' fill='%23A7D8F0'/%3E%3Ctext x='192' y='64' font-family='sans-serif' font-size='32' font-weight='800' text-anchor='middle' dominant-baseline='middle'%3E寝2%3C/text%3E%3Crect x='256' y='0' width='128' height='128' fill='%23A7D8F0'/%3E%3Ctext x='320' y='64' font-family='sans-serif' font-size='32' font-weight='800' text-anchor='middle' dominant-baseline='middle'%3E寝3%3C/text%3E%3Crect x='384' y='0' width='128' height='128' fill='%23A7D8F0'/%3E%3Ctext x='448' y='64' font-family='sans-serif' font-size='32' font-weight='800' text-anchor='middle' dominant-baseline='middle'%3E寝4%3C/text%3E%3C!-- row 2 --%3E%3Crect x='0' y='128' width='128' height='128' fill='%23FFD6E7'/%3E%3Ctext x='64' y='192' font-family='sans-serif' font-size='32' font-weight='800' text-anchor='middle' dominant-baseline='middle'%3E応援1%3C/text%3E%3Crect x='128' y='128' width='128' height='128' fill='%23FFD6E7'/%3E%3Ctext x='192' y='192' font-family='sans-serif' font-size='32' font-weight='800' text-anchor='middle' dominant-baseline='middle'%3E応援2%3C/text%3E%3Crect x='256' y='128' width='128' height='128' fill='%23FFD6E7'/%3E%3Ctext x='320' y='192' font-family='sans-serif' font-size='32' font-weight='800' text-anchor='middle' dominant-baseline='middle'%3E応援3%3C/text%3E%3Crect x='384' y='128' width='128' height='128' fill='%23FFD6E7'/%3E%3Ctext x='448' y='192' font-family='sans-serif' font-size='32' font-weight='800' text-anchor='middle' dominant-baseline='middle'%3E応援4%3C/text%3E%3C!-- row 3 --%3E%3Crect x='0' y='256' width='128' height='128' fill='%23FFB4A2'/%3E%3Ctext x='64' y='320' font-family='sans-serif' font-size='32' font-weight='800' text-anchor='middle' dominant-baseline='middle'%3E慌1%3C/text%3E%3Crect x='128' y='256' width='128' height='128' fill='%23FFB4A2'/%3E%3Ctext x='192' y='320' font-family='sans-serif' font-size='32' font-weight='800' text-anchor='middle' dominant-baseline='middle'%3E慌2%3C/text%3E%3Crect x='256' y='256' width='128' height='128' fill='%23FFB4A2'/%3E%3Ctext x='320' y='320' font-family='sans-serif' font-size='32' font-weight='800' text-anchor='middle' dominant-baseline='middle'%3E慌3%3C/text%3E%3Crect x='384' y='256' width='128' height='128' fill='%23FFB4A2'/%3E%3Ctext x='448' y='320' font-family='sans-serif' font-size='32' font-weight='800' text-anchor='middle' dominant-baseline='middle'%3E慌4%3C/text%3E%3C!-- row 4 --%3E%3Crect x='0' y='384' width='128' height='128' fill='%23FFF9C4'/%3E%3Ctext x='64' y='448' font-family='sans-serif' font-size='32' font-weight='800' text-anchor='middle' dominant-baseline='middle'%3E飛1%3C/text%3E%3Crect x='128' y='384' width='128' height='128' fill='%23FFF9C4'/%3E%3Ctext x='192' y='448' font-family='sans-serif' font-size='32' font-weight='800' text-anchor='middle' dominant-baseline='middle'%3E飛2%3C/text%3E%3Crect x='256' y='384' width='128' height='128' fill='%23FFF9C4'/%3E%3Ctext x='320' y='448' font-family='sans-serif' font-size='32' font-weight='800' text-anchor='middle' dominant-baseline='middle'%3E飛3%3C/text%3E%3C/svg%3E")`
 
 function CharacterAnimation({ state, size = 200 }: CharacterAnimationProps) {
   const [spriteClass, setSpriteClass] = useState('')
@@ -204,43 +204,56 @@ function CharacterAnimation({ state, size = 200 }: CharacterAnimationProps) {
     switch (state) {
       case 'waiting':
         setSpriteClass('sprite-row-1')
-        setAnimClass('sprite-anim-2')
+        setAnimClass('sprite-anim-wait')
         break
       case 'running':
         setSpriteClass('sprite-row-2')
-        setAnimClass('sprite-anim-2')
+        setAnimClass('sprite-anim-run')
         break
       case 'panic':
         setSpriteClass('sprite-row-3')
-        setAnimClass('sprite-anim-2-fast')
+        setAnimClass('sprite-anim-panic')
         break
       case 'clear':
         setSpriteClass('sprite-row-4')
-        setAnimClass('') // ジャンプは1フレームなのでX軸のアニメーションは不要
+        setAnimClass('sprite-anim-clear')
         break
     }
   }, [state])
 
-  // Framer Motionでの複雑な動き (全体コンテナ用)
+  // Framer Motionでの3〜4頭身用 Squash & Stretch および複雑な動き
   const motionAnim = state === 'clear'
-    ? { y: [0, -60, 0], scale: [1, 1.05, 1] } // 大きな縦バウンド
+    ? { 
+        y: [0, 10, -60, 0, 10, 0], // 溜め(+10)→上昇(-60)→着地(0)→反動(+10)
+        scaleX: [1, 1.1, 0.9, 1, 1.1, 1], // 溜めで横に伸び、空中で縦長に、着地で少し横に伸びる
+        scaleY: [1, 0.9, 1.1, 1, 0.9, 1]  // 溜めで縦に潰れ、空中で伸び、着地で少し潰れる
+      }
     : state === 'panic'
-    ? { x: [-30, 30, -30], y: [0, -5, 0] }   // 画面内左右往復
+    ? { x: [-50, 50, -50], y: [0, -5, 0] }   // 画面内左右往復と浮遊感
     : state === 'waiting'
-    ? { y: [0, -10, 0] }                     // ゆっくりした上下動
-    : { y: [0, -5, 0] }                      // 普段のリズミカルな上下動 (running)
+    ? { 
+        y: [0, -4, 0],
+        scaleX: [1, 1.03, 1], // 呼吸にあわせて横に「ぷにゅ」と膨らむ
+        scaleY: [1, 0.97, 1]  // 呼吸にあわせて縦に少し潰れる
+      }
+    : { 
+        rotate: [-8, 8, -8], // 応援時、大きな頭をリズムよく左右に傾ける
+        y: [0, -8, 0],
+        scaleX: [1, 1.02, 1],
+        scaleY: [1, 0.98, 1]
+      }
 
   const motionTransition: any = state === 'clear'
-    ? { duration: 0.8, repeat: Infinity, repeatDelay: 0.2, ease: 'easeOut' }
+    ? { duration: 1.2, times: [0, 0.2, 0.6, 0.8, 0.9, 1], repeat: Infinity, repeatDelay: 0.5, ease: 'easeOut' } // ジャンプ軌道
     : state === 'panic'
-    ? { duration: 0.6, repeat: Infinity, ease: 'linear' }
+    ? { duration: 0.8, repeat: Infinity, ease: 'linear' } // 往復はlinearで高速
     : state === 'waiting'
-    ? { duration: 3, repeat: Infinity, ease: 'easeInOut' }
-    : { duration: 1, repeat: Infinity, ease: 'easeInOut' } // running用
+    ? { duration: 2.5, repeat: Infinity, ease: 'easeInOut' } // 呼吸にあわせてゆっくり
+    : { duration: 0.8, repeat: Infinity, ease: 'easeInOut' } // running用リズム
 
-  // キャラクター自体の震えエフェクト (panic時のみ)
+  // キャラクター自体の震えエフェクト (panic時のみ高速で震える)
   const shakeAnim = state === 'panic'
-    ? { rotate: [-4, 4, -4], scale: [0.95, 1.05, 0.95] }
+    ? { rotate: [-5, 5, -5], scale: [0.96, 1.04, 0.96] }
     : { rotate: 0, scale: 1 }
 
   return (
@@ -252,9 +265,9 @@ function CharacterAnimation({ state, size = 200 }: CharacterAnimationProps) {
     >
       <motion.div
         animate={shakeAnim}
-        transition={{ duration: 0.15, repeat: Infinity }}
+        transition={{ duration: 0.12, repeat: Infinity }}
         className={`sprite-char ${spriteClass} ${animClass} rounded-2xl overflow-hidden shadow-inner border-4 border-white/50`}
-        style={{ width: '100%', height: '100%', backgroundImage: REAL_SPRITE_URL }}
+        style={{ width: '100%', height: '100%', backgroundImage: DUMMY_SPRITE_URL_4X4, transformOrigin: 'bottom center' }}
       />
       
       {/* 待機中のZzzエフェクト */}
