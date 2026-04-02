@@ -180,6 +180,77 @@ function FloatingStars() {
 }
 
 // ==============================
+// キャラクターアニメーション
+// ==============================
+interface CharacterAnimationProps {
+  state: CharState
+  isPinch?: boolean
+  size?: number
+}
+
+function CharacterAnimation({ state, isPinch = false, size = 200 }: CharacterAnimationProps) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  // 再生速度の調整
+  useEffect(() => {
+    if (videoRef.current) {
+      // 残り1分(isPinch)の時はアニメーションを速める
+      videoRef.current.playbackRate = isPinch ? 1.5 : 1.0
+    }
+  }, [isPinch, state])
+
+  // 動画ソースのマッピング (.webm 推奨・背景透過)
+  const videoSrc = {
+    default: '/char-default.webm',
+    active: '/char-active.webm',
+    pinch: '/char-active.webm', // pinch時も同じ動画だが、playbackRateを速くする
+    complete: '/char-complete.webm',
+  }[state]
+
+  // フォールバック用の静止画 (動画がない場合に表示)
+  const fallbackPoster = {
+    default: '/char-default.png',
+    active: '/char-active.png',
+    pinch: '/char-pinch.png', // ピンチ用静止画があればそれを利用
+    complete: '/char-complete.png',
+  }[state]
+
+  // アニメーション (完了時はジャンプ)
+  const motionAnim = state === 'complete'
+    ? { y: [0, -30, 0], scale: [1, 1.05, 1] } // ジャンプ！
+    : state === 'pinch'
+    ? { x: [-3, 3, -3, 3, 0], rotate: [-2, 2, -2, 2, 0] } // 焦っている動き
+    : { y: [0, -6, 0] } // 普段のゆっくりした呼吸のような動き
+
+  const motionTransition: any = state === 'complete'
+    ? { duration: 0.6, repeat: Infinity, repeatDelay: 0.2, ease: 'easeInOut' }
+    : state === 'pinch'
+    ? { duration: 0.5, repeat: Infinity }
+    : { duration: 3, repeat: Infinity, ease: 'easeInOut' }
+
+  return (
+    <motion.div
+      animate={motionAnim}
+      transition={motionTransition}
+      className="relative drop-shadow-2xl flex justify-center items-center"
+      style={{ width: size, height: size }}
+    >
+      <video
+        ref={videoRef}
+        key={videoSrc}
+        src={videoSrc}
+        poster={fallbackPoster}
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="w-full h-full object-contain pointer-events-none"
+      />
+    </motion.div>
+  )
+}
+
+// ==============================
 // タスクカードコンポーネント
 // ==============================
 interface TaskCardProps {
@@ -419,13 +490,6 @@ export default function MorningQuestPage() {
     speak('まほうのあさクエストをはじめるよ！いっしょにがんばろうね！')
   }
 
-  const charImageSrc = {
-    default: '/char-default.png',
-    active: '/char-active.png',
-    pinch: '/char-pinch.png',
-    complete: '/char-complete.png',
-  }[charState]
-
   const isPinch = remainingSec < 60 && remainingSec > 0 && isRunning
   const completedCount = taskStates.filter((s) => s === 'done').length
   const totalProgress = (completedCount / TASKS.length) * 100
@@ -442,16 +506,8 @@ export default function MorningQuestPage() {
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-            className="float-anim"
           >
-            <Image
-              src="/char-default.png"
-              alt="キャラクター"
-              width={220}
-              height={220}
-              className="drop-shadow-2xl"
-              priority
-            />
+            <CharacterAnimation state="default" size={220} />
           </motion.div>
 
           <motion.div
@@ -519,16 +575,11 @@ export default function MorningQuestPage() {
         <FloatingStars />
         <div className="z-10 flex flex-col items-center gap-6 text-center max-w-lg w-full">
           <motion.div
-            animate={{ y: [0, -20, 0], rotate: [0, 5, -5, 0], scale: [1, 1.05, 1] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            initial={{ scale: 0, rotate: -15 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 200 }}
           >
-            <Image
-              src="/char-complete.png"
-              alt="かんりょう！"
-              width={240}
-              height={240}
-              className="drop-shadow-2xl"
-            />
+            <CharacterAnimation state="complete" size={240} />
           </motion.div>
 
           <motion.div
@@ -707,31 +758,7 @@ export default function MorningQuestPage() {
                     transition={{ duration: 0.3 }}
                     className="relative"
                   >
-                    <motion.div
-                      animate={
-                        charState === 'pinch'
-                          ? { x: [-3, 3, -3, 3, 0], rotate: [-2, 2, -2, 2, 0] }
-                          : charState === 'active'
-                          ? { y: [0, -8, 0] }
-                          : charState === 'complete'
-                          ? { y: [0, -12, 0], rotate: [0, 5, -5, 0] }
-                          : { y: [0, -6, 0] }
-                      }
-                      transition={
-                        charState === 'pinch'
-                          ? { duration: 0.5, repeat: Infinity }
-                          : { duration: 2.5, repeat: Infinity, ease: 'easeInOut' }
-                      }
-                    >
-                      <Image
-                        src={charImageSrc}
-                        alt="キャラクター"
-                        width={200}
-                        height={200}
-                        className="drop-shadow-xl"
-                        priority
-                      />
-                    </motion.div>
+                    <CharacterAnimation state={charState} isPinch={isPinch} size={200} />
 
                     {/* ピンチ時の点滅エフェクト */}
                     {isPinch && (
