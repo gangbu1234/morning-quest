@@ -143,14 +143,20 @@ function launchConfetti(level: 'normal' | 'mega' = 'normal') {
 // スター装飾コンポーネント
 // ==============================
 function FloatingStars() {
-  const stars = Array.from({ length: 12 }, (_, i) => ({
-    id: i,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    delay: Math.random() * 3,
-    size: Math.random() * 16 + 8,
-    color: ['#FF9FCA', '#C8A0FF', '#6EE7B7', '#FFD600', '#FF7F7A'][Math.floor(Math.random() * 5)],
-  }))
+  const [stars, setStars] = useState<Array<{id: number, x: number, y: number, delay: number, size: number, color: string}>>([])
+
+  useEffect(() => {
+    setStars(Array.from({ length: 12 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      delay: Math.random() * 3,
+      size: Math.random() * 16 + 8,
+      color: ['#FF9FCA', '#C8A0FF', '#6EE7B7', '#FFD600', '#FF7F7A'][Math.floor(Math.random() * 5)],
+    })))
+  }, [])
+
+  if (stars.length === 0) return null
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
