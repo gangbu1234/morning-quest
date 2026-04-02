@@ -10,7 +10,7 @@ import { Star, CheckCircle2, Clock, Sparkles, ChevronRight, RotateCcw } from 'lu
 // 型定義
 // ==============================
 type TaskState = 'waiting' | 'active' | 'pinch' | 'done'
-type CharState = 'default' | 'active' | 'pinch' | 'complete'
+type CharState = 'waiting' | 'running' | 'panic' | 'clear'
 
 interface Task {
   id: number
@@ -184,68 +184,83 @@ function FloatingStars() {
 // ==============================
 interface CharacterAnimationProps {
   state: CharState
-  isPinch?: boolean
   size?: number
 }
 
-function CharacterAnimation({ state, isPinch = false, size = 200 }: CharacterAnimationProps) {
-  const videoRef = useRef<HTMLVideoElement>(null)
+// ダミーのスプライト画像 (SVG base64 - 1フレーム100x100、2列4行)
+const DUMMY_SPRITE_URL = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='400' viewBox='0 0 200 400'%3E%3C!-- row 1 --%3E%3Crect x='0' y='0' width='100' height='100' fill='%23A7D8F0'/%3E%3Ccircle cx='50' cy='50' r='30' fill='%23FFF'/%3E%3Ctext x='50' y='55' font-family='sans-serif' font-size='16' font-weight='bold' text-anchor='middle' dominant-baseline='middle'%3E待機 1%3C/text%3E%3Crect x='100' y='0' width='100' height='100' fill='%23A7D8F0'/%3E%3Ccircle cx='150' cy='50' r='30' fill='%23FFF'/%3E%3Ctext x='150' y='55' font-family='sans-serif' font-size='16' font-weight='bold' text-anchor='middle' dominant-baseline='middle'%3E待機 2%3C/text%3E%3C!-- row 2 --%3E%3Crect x='0' y='100' width='100' height='100' fill='%23FFD6E7'/%3E%3Ccircle cx='50' cy='150' r='30' fill='%23FFF'/%3E%3Ctext x='50' y='155' font-family='sans-serif' font-size='16' font-weight='bold' text-anchor='middle' dominant-baseline='middle'%3E応援 1%3C/text%3E%3Crect x='100' y='100' width='100' height='100' fill='%23FFD6E7'/%3E%3Ccircle cx='150' cy='150' r='30' fill='%23FFF'/%3E%3Ctext x='150' y='155' font-family='sans-serif' font-size='16' font-weight='bold' text-anchor='middle' dominant-baseline='middle'%3E応援 2%3C/text%3E%3C!-- row 3 --%3E%3Crect x='0' y='200' width='100' height='100' fill='%23FFB4A2'/%3E%3Ccircle cx='50' cy='250' r='30' fill='%23FFF'/%3E%3Ctext x='50' y='255' font-family='sans-serif' font-size='16' font-weight='bold' text-anchor='middle' dominant-baseline='middle'%3Eあわて 1%3C/text%3E%3Crect x='100' y='200' width='100' height='100' fill='%23FFB4A2'/%3E%3Ccircle cx='150' cy='250' r='30' fill='%23FFF'/%3E%3Ctext x='150' y='255' font-family='sans-serif' font-size='16' font-weight='bold' text-anchor='middle' dominant-baseline='middle'%3Eあわて 2%3C/text%3E%3C!-- row 4 --%3E%3Crect x='0' y='300' width='100' height='100' fill='%23FFF9C4'/%3E%3Ccircle cx='50' cy='350' r='30' fill='%23FFF'/%3E%3Ctext x='50' y='355' font-family='sans-serif' font-size='16' font-weight='bold' text-anchor='middle' dominant-baseline='middle'%3Eジャンプ%3C/text%3E%3Crect x='100' y='300' width='100' height='100' fill='%23FFF9C4'/%3E%3Ccircle cx='150' cy='350' r='30' fill='%23FFF'/%3E%3Ctext x='150' y='355' font-family='sans-serif' font-size='16' font-weight='bold' text-anchor='middle' dominant-baseline='middle'%3E-%3C/text%3E%3C/svg%3E")`
 
-  // 再生速度の調整
+function CharacterAnimation({ state, size = 200 }: CharacterAnimationProps) {
+  const [spriteClass, setSpriteClass] = useState('')
+  const [animClass, setAnimClass] = useState('')
+  
   useEffect(() => {
-    if (videoRef.current) {
-      // 残り1分(isPinch)の時はアニメーションを速める
-      videoRef.current.playbackRate = isPinch ? 1.5 : 1.0
+    switch (state) {
+      case 'waiting':
+        setSpriteClass('sprite-row-1')
+        setAnimClass('sprite-anim-2')
+        break
+      case 'running':
+        setSpriteClass('sprite-row-2')
+        setAnimClass('sprite-anim-2')
+        break
+      case 'panic':
+        setSpriteClass('sprite-row-3')
+        setAnimClass('sprite-anim-2-fast')
+        break
+      case 'clear':
+        setSpriteClass('sprite-row-4')
+        setAnimClass('') // ジャンプは1フレームなのでX軸のアニメーションは不要
+        break
     }
-  }, [isPinch, state])
+  }, [state])
 
-  // 動画ソースのマッピング (.webm 推奨・背景透過)
-  const videoSrc = {
-    default: '/char-default.webm',
-    active: '/char-active.webm',
-    pinch: '/char-active.webm', // pinch時も同じ動画だが、playbackRateを速くする
-    complete: '/char-complete.webm',
-  }[state]
+  // Framer Motionでの複雑な動き (全体コンテナ用)
+  const motionAnim = state === 'clear'
+    ? { y: [0, -60, 0], scale: [1, 1.05, 1] } // 大きな縦バウンド
+    : state === 'panic'
+    ? { x: [-30, 30, -30], y: [0, -5, 0] }   // 画面内左右往復
+    : state === 'waiting'
+    ? { y: [0, -10, 0] }                     // ゆっくりした上下動
+    : { y: [0, -5, 0] }                      // 普段のリズミカルな上下動 (running)
 
-  // フォールバック用の静止画 (動画がない場合に表示)
-  const fallbackPoster = {
-    default: '/char-default.png',
-    active: '/char-active.png',
-    pinch: '/char-pinch.png', // ピンチ用静止画があればそれを利用
-    complete: '/char-complete.png',
-  }[state]
+  const motionTransition: any = state === 'clear'
+    ? { duration: 0.8, repeat: Infinity, repeatDelay: 0.2, ease: 'easeOut' }
+    : state === 'panic'
+    ? { duration: 0.6, repeat: Infinity, ease: 'linear' }
+    : state === 'waiting'
+    ? { duration: 3, repeat: Infinity, ease: 'easeInOut' }
+    : { duration: 1, repeat: Infinity, ease: 'easeInOut' } // running用
 
-  // アニメーション (完了時はジャンプ)
-  const motionAnim = state === 'complete'
-    ? { y: [0, -30, 0], scale: [1, 1.05, 1] } // ジャンプ！
-    : state === 'pinch'
-    ? { x: [-3, 3, -3, 3, 0], rotate: [-2, 2, -2, 2, 0] } // 焦っている動き
-    : { y: [0, -6, 0] } // 普段のゆっくりした呼吸のような動き
-
-  const motionTransition: any = state === 'complete'
-    ? { duration: 0.6, repeat: Infinity, repeatDelay: 0.2, ease: 'easeInOut' }
-    : state === 'pinch'
-    ? { duration: 0.5, repeat: Infinity }
-    : { duration: 3, repeat: Infinity, ease: 'easeInOut' }
+  // キャラクター自体の震えエフェクト (panic時のみ)
+  const shakeAnim = state === 'panic'
+    ? { rotate: [-4, 4, -4], scale: [0.95, 1.05, 0.95] }
+    : { rotate: 0, scale: 1 }
 
   return (
     <motion.div
       animate={motionAnim}
       transition={motionTransition}
-      className="relative drop-shadow-2xl flex justify-center items-center"
+      className="relative flex justify-center items-center drop-shadow-2xl"
       style={{ width: size, height: size }}
     >
-      <video
-        ref={videoRef}
-        key={videoSrc}
-        src={videoSrc}
-        poster={fallbackPoster}
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="w-full h-full object-contain pointer-events-none"
+      <motion.div
+        animate={shakeAnim}
+        transition={{ duration: 0.15, repeat: Infinity }}
+        className={`sprite-char ${spriteClass} ${animClass} rounded-2xl overflow-hidden shadow-inner border-4 border-white/50`}
+        style={{ width: '100%', height: '100%', backgroundImage: DUMMY_SPRITE_URL }}
       />
+      
+      {/* 待機中のZzzエフェクト */}
+      {state === 'waiting' && (
+        <motion.div
+          animate={{ opacity: [0, 1, 0], y: [0, -30], x: [0, 10] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="absolute -top-8 right-0 text-3xl font-black text-sky-400 drop-shadow-md z-10"
+        >
+          Zzz
+        </motion.div>
+      )}
     </motion.div>
   )
 }
@@ -361,7 +376,7 @@ export default function MorningQuestPage() {
   const [taskStates, setTaskStates] = useState<TaskState[]>(TASKS.map((_, i) => (i === 0 ? 'active' : 'waiting')))
   const [isRunning, setIsRunning] = useState(false)
   const [remainingSec, setRemainingSec] = useState(TASKS[0].durationMin * 60)
-  const [charState, setCharState] = useState<CharState>('default')
+  const [charState, setCharState] = useState<CharState>('waiting')
   const [cheerMsg, setCheerMsg] = useState('')
   const [showCheer, setShowCheer] = useState(false)
   const [allDone, setAllDone] = useState(false)
@@ -403,13 +418,13 @@ export default function MorningQuestPage() {
   // ピンチ状態の検出
   useEffect(() => {
     if (!isRunning) return
-    const isPinch = remainingSec < 60 && remainingSec > 0
-    setCharState(isPinch ? 'pinch' : 'active')
+    const isPinchQuery = remainingSec < 60 && remainingSec > 0
+    setCharState(isPinchQuery ? 'panic' : 'running')
   }, [remainingSec, isRunning])
 
   const handleTaskComplete = useCallback(() => {
     setIsRunning(false)
-    setCharState('complete')
+    setCharState('clear')
 
     // 紙吹雪
     const isLast = currentTaskIdx === TASKS.length - 1
@@ -431,7 +446,7 @@ export default function MorningQuestPage() {
 
     if (isLast) {
       setAllDone(true)
-      setTimeout(() => setCharState('complete'), 100)
+      setTimeout(() => setCharState('clear'), 100)
     } else {
       // 応援メッセージ表示
       const msg = CHEER_MESSAGES[Math.floor(Math.random() * CHEER_MESSAGES.length)]
@@ -443,7 +458,7 @@ export default function MorningQuestPage() {
 
   const handleStartTask = () => {
     setIsRunning(true)
-    setCharState('active')
+    setCharState('running')
     const startMessages = [
       `つぎは${currentTask.name}だよ！${currentTask.durationMin}ふんでできるかな？がんばれ！`,
       `${currentTask.name}のじかんだよ！はりきっていこう！`,
@@ -457,7 +472,7 @@ export default function MorningQuestPage() {
     const next = currentTaskIdx + 1
     setCurrentTaskIdx(next)
     setRemainingSec(TASKS[next].durationMin * 60)
-    setCharState('default')
+    setCharState('waiting')
     setTaskStates((prev) => {
       const s = [...prev]
       if (s[next] === 'waiting') s[next] = 'active'
@@ -470,7 +485,7 @@ export default function MorningQuestPage() {
     if (isRunning) return
     setCurrentTaskIdx(idx)
     setRemainingSec(TASKS[idx].durationMin * 60)
-    setCharState(taskStates[idx] === 'done' ? 'complete' : 'default')
+    setCharState(taskStates[idx] === 'done' ? 'clear' : 'waiting')
   }
 
   const handleReset = () => {
@@ -478,7 +493,7 @@ export default function MorningQuestPage() {
     setCurrentTaskIdx(0)
     setRemainingSec(TASKS[0].durationMin * 60)
     setTaskStates(TASKS.map((_, i) => (i === 0 ? 'active' : 'waiting')))
-    setCharState('default')
+    setCharState('waiting')
     setAllDone(false)
     setShowCheer(false)
     setShowStartScreen(true)
@@ -507,7 +522,7 @@ export default function MorningQuestPage() {
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: 'spring', stiffness: 200, damping: 15 }}
           >
-            <CharacterAnimation state="default" size={220} />
+            <CharacterAnimation state="waiting" size={220} />
           </motion.div>
 
           <motion.div
@@ -579,7 +594,7 @@ export default function MorningQuestPage() {
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: 'spring', stiffness: 200 }}
           >
-            <CharacterAnimation state="complete" size={240} />
+            <CharacterAnimation state="clear" size={240} />
           </motion.div>
 
           <motion.div
@@ -758,7 +773,7 @@ export default function MorningQuestPage() {
                     transition={{ duration: 0.3 }}
                     className="relative"
                   >
-                    <CharacterAnimation state={charState} isPinch={isPinch} size={200} />
+                    <CharacterAnimation state={charState} size={200} />
 
                     {/* ピンチ時の点滅エフェクト */}
                     {isPinch && (

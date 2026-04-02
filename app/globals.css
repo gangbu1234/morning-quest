@@ -59,6 +59,31 @@ body {
   100% { background-position: 200% center; }
 }
 
+/* ==============================
+   Sprite Animation (Character)
+   ============================== */
+.sprite-char {
+  background-size: 200% 400%; /* 2x2 frames horizontal, 4 rows vertical */
+  background-repeat: no-repeat;
+  image-rendering: pixelated; /* To keep edges sharp if it's pixel art */
+}
+
+@keyframes sprite-2-frames {
+  to { background-position-x: 200%; }
+}
+
+.sprite-anim-2 {
+  animation: sprite-2-frames 1s steps(2, end) infinite;
+}
+.sprite-anim-2-fast {
+  animation: sprite-2-frames 0.2s steps(2, end) infinite;
+}
+
+.sprite-row-1 { background-position-y: 0%; }
+.sprite-row-2 { background-position-y: 33.333%; }
+.sprite-row-3 { background-position-y: 66.666%; }
+.sprite-row-4 { background-position-y: 100%; background-position-x: 0%; }
+
 @keyframes pulse-glow {
   0%, 100% { box-shadow: 0 0 10px rgba(255, 159, 202, 0.5), 0 0 20px rgba(200, 160, 255, 0.3); }
   50% { box-shadow: 0 0 20px rgba(255, 159, 202, 0.8), 0 0 40px rgba(200, 160, 255, 0.6), 0 0 60px rgba(255, 159, 202, 0.3); }
