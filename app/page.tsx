@@ -187,8 +187,8 @@ interface CharacterAnimationProps {
   size?: number
 }
 
-// ダミーのスプライト画像 (SVG base64 - 1フレーム100x100、2列4行)
-const DUMMY_SPRITE_URL = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='400' viewBox='0 0 200 400'%3E%3C!-- row 1 --%3E%3Crect x='0' y='0' width='100' height='100' fill='%23A7D8F0'/%3E%3Ccircle cx='50' cy='50' r='30' fill='%23FFF'/%3E%3Ctext x='50' y='55' font-family='sans-serif' font-size='16' font-weight='bold' text-anchor='middle' dominant-baseline='middle'%3E待機 1%3C/text%3E%3Crect x='100' y='0' width='100' height='100' fill='%23A7D8F0'/%3E%3Ccircle cx='150' cy='50' r='30' fill='%23FFF'/%3E%3Ctext x='150' y='55' font-family='sans-serif' font-size='16' font-weight='bold' text-anchor='middle' dominant-baseline='middle'%3E待機 2%3C/text%3E%3C!-- row 2 --%3E%3Crect x='0' y='100' width='100' height='100' fill='%23FFD6E7'/%3E%3Ccircle cx='50' cy='150' r='30' fill='%23FFF'/%3E%3Ctext x='50' y='155' font-family='sans-serif' font-size='16' font-weight='bold' text-anchor='middle' dominant-baseline='middle'%3E応援 1%3C/text%3E%3Crect x='100' y='100' width='100' height='100' fill='%23FFD6E7'/%3E%3Ccircle cx='150' cy='150' r='30' fill='%23FFF'/%3E%3Ctext x='150' y='155' font-family='sans-serif' font-size='16' font-weight='bold' text-anchor='middle' dominant-baseline='middle'%3E応援 2%3C/text%3E%3C!-- row 3 --%3E%3Crect x='0' y='200' width='100' height='100' fill='%23FFB4A2'/%3E%3Ccircle cx='50' cy='250' r='30' fill='%23FFF'/%3E%3Ctext x='50' y='255' font-family='sans-serif' font-size='16' font-weight='bold' text-anchor='middle' dominant-baseline='middle'%3Eあわて 1%3C/text%3E%3Crect x='100' y='200' width='100' height='100' fill='%23FFB4A2'/%3E%3Ccircle cx='150' cy='250' r='30' fill='%23FFF'/%3E%3Ctext x='150' y='255' font-family='sans-serif' font-size='16' font-weight='bold' text-anchor='middle' dominant-baseline='middle'%3Eあわて 2%3C/text%3E%3C!-- row 4 --%3E%3Crect x='0' y='300' width='100' height='100' fill='%23FFF9C4'/%3E%3Ccircle cx='50' cy='350' r='30' fill='%23FFF'/%3E%3Ctext x='50' y='355' font-family='sans-serif' font-size='16' font-weight='bold' text-anchor='middle' dominant-baseline='middle'%3Eジャンプ%3C/text%3E%3Crect x='100' y='300' width='100' height='100' fill='%23FFF9C4'/%3E%3Ccircle cx='150' cy='350' r='30' fill='%23FFF'/%3E%3Ctext x='150' y='355' font-family='sans-serif' font-size='16' font-weight='bold' text-anchor='middle' dominant-baseline='middle'%3E-%3C/text%3E%3C/svg%3E")`
+// ダミーのスプライト画像ではなく、生成したイラストを使用します
+const REAL_SPRITE_URL = `url("/char-sprite.png")`
 
 function CharacterAnimation({ state, size = 200 }: CharacterAnimationProps) {
   const [spriteClass, setSpriteClass] = useState('')
@@ -248,7 +248,7 @@ function CharacterAnimation({ state, size = 200 }: CharacterAnimationProps) {
         animate={shakeAnim}
         transition={{ duration: 0.15, repeat: Infinity }}
         className={`sprite-char ${spriteClass} ${animClass} rounded-2xl overflow-hidden shadow-inner border-4 border-white/50`}
-        style={{ width: '100%', height: '100%', backgroundImage: DUMMY_SPRITE_URL }}
+        style={{ width: '100%', height: '100%', backgroundImage: REAL_SPRITE_URL }}
       />
       
       {/* 待機中のZzzエフェクト */}
